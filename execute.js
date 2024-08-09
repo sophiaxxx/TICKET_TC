@@ -1,4 +1,3 @@
-
 const ticketEvent = (t) => {
     //設定訂票當日的日期時間
     if(t===''){
@@ -16,114 +15,81 @@ const ticketEvent = (t) => {
         const delay = targetDate.getTime() - currentTime.getTime();
         //延遲執行按鈕
         setTimeout(function() {
-            chrome.runtime.sendMessage({ action: 'pageReloaded' });
+            go2getTicket();
         }, delay);
     } else {
         console.log('Current time is after the target date, button will not be clicked.');
     }
 };
 
+function ticketGot(){
+// const clickBtn = document.querySelector("button.btn-default.plus");
+// if (clickBtn && !clickBtn.disabled) {
 
-function checkURL() {
-    var currentURL = window.location.href;
-    if (currentURL.indexOf('tixcraft.com/activity/detail') > 0 ) {
-        var c_url = currentURL.replace("https://tixcraft.com/activity/detail", "/activity/game");
-        var link = document.querySelector('a[href="' + c_url + '"]');
-        if (link) {
-            link.click();
-            clickToTicket();
-        } else{
-            setTimeout(function() {checkURL()}, 1000);
+//     // 點擊兩次以選擇2張票
+    // for (let i = 0; i < 2; i++) {
+    //     plusButton.click();
+    // }
+// } else {
+//     console.log("not found");
+// }
+// 獲取指定票價
+const ticketprice = Array.from(document.querySelectorAll('.ticket-unit'))
+    .find(unit => unit.querySelector('.ticket-price .ng-binding').textContent.trim().includes('TWD$800'));
+    if (ticketprice) {
+        // 找到對應價位的 input 元素
+        const inputField = ticketprice.querySelector('input[type="text"][ng-model="ticketModel.quantity"]');
+        if (inputField && !inputField.disabled) {
+            // 將值設置為 2
+            inputField.value = 2;
+    
+            // 如果需要觸發變更事件
+            const event = new Event('input', { bubbles: true });
+            inputField.dispatchEvent(event);
+        } else {
+            console.log('Input field not found or it is disabled.');
+        }
+    } else {
+        console.log('Ticket not found.');
+    }
+
+
+
+const checkbox = document.getElementById("person_agree_terms");
+if (!checkbox.checked) {
+    checkbox.click();
+}
+// 觸發複選框方法 假如是用 .ckecked = true的話要加這段
+//conditions.agreeTerm = true;
+const buttons = document.querySelectorAll('button.btn.btn-primary.btn-lg');
+buttons.forEach(button => {
+
+    if (button.textContent.includes('電腦配位')) {
+
+        if (!button.disabled) {
+            button.click();
+            console.log('Next step button clicked');
+        } else {
+            console.log('Next step button is disabled');
         }
     }
-    
+});
+
+console.log('done!!');
 }
 
-function clickToTicket(){
-    var button = document.querySelector('button.btn.btn-primary.text-bold.m-0');
-    if (button) {
-        chrome.runtime.sendMessage({ action: 'page2Next' });
-        button.click();
-    } else{
-        setTimeout(function() {clickToTicket()}, 1000);
-    }
-}
-function getOrder(){
-    var aElement = document.querySelector('ul.area-list li.select_form_b a');
-    if (aElement) {
-        aElement.click();
-        buyTicket();
-    }else{
-        chrome.runtime.sendMessage({ action: 'soudOutReload' });
-    }
-    
-}
-
-function buyTicket() {
-    //選張數
-    console.log('選張數');
-    var s_element = document.querySelector('.form-select.mobile-select');
-    if (s_element) {
-        s_element.selectedIndex = 2;
-        var checkboxElement = document.getElementById("TicketForm_agree");
-        checkboxElement.checked = true;
-        //TODO OCR辨識會找不到 tesseract
-        //checkOCR();
-
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        document.head.appendChild(script);
-        setTimeout(function() {
-             //識別驗證碼
-             const image = 'https://tixcraft.com/ticket/captcha?v=663adf0402f8e0.22876880';
-             (async () => {
-                 const worker = await Tesseract.createWorker();
-                 await worker.load();
-                 await worker.loadLanguage('eng');
-                 await worker.initialize('eng');
-                 const { data: { text } } = await worker.recognize(image);
-                 console.log(text);
-                 var inputElement = document.getElementById("TicketForm_verifyCode");
-                 inputElement.value = text;
-                 await worker.terminate();
-             })();
-        }, 4000);
-    } else {
-        setTimeout(function() {buyTicket()}, 1000);
-    }
-}
-
-function checkOCR(){
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-    script.onload = function() {
-
-        setTimeout(function() {
-            //識別驗證碼
-            const image = 'https://tixcraft.com/ticket/captcha?v=663adf0402f8e0.22876880';
-            (async () => {
-                const worker = await Tesseract.createWorker();
-                await worker.load();
-                await worker.loadLanguage('eng');
-                await worker.initialize('eng');
-                const { data: { text } } = await worker.recognize(image);
-                console.log(text);
-                var inputElement = document.getElementById("TicketForm_verifyCode");
-                inputElement.value = text;
-                await worker.terminate();
-            })();
-        }, 2000);
-        
-    };
-    document.head.appendChild(script);
+function go2getTicket(){
+    chrome.runtime.sendMessage({ action: 'pageReloaded' });
 }
 
 function reset(){
+    console.log("reset");
     window.location.reload();
 }
 
 
 const onMessage = (message) => {
+    console.log(message.action);
   switch (message.action) {
     case "SETTIME":
         ticketEvent(message.startTime);
@@ -132,16 +98,8 @@ const onMessage = (message) => {
         reset();
         break;
     case "GETTICKET":
-        checkURL();
-        break;
-    case "PAGE2TICKET":
-        getOrder();
-        break;
-    case "SOLDOUT":
-        getOrder();
-        break;
-    case "BUY2TICKET":
-        buyTicket();
+        console.log('Execute function in execute.js');
+        ticketGot();
         break;
     default:
       break;
@@ -149,5 +107,3 @@ const onMessage = (message) => {
 };
 
 chrome.runtime.onMessage.addListener(onMessage);
-
-setInterval( console.log("AAA"), 2000);
