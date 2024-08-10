@@ -1,0 +1,46 @@
+<div class="ticket-unit ng-scope" ng-class="{active: ticketModel.quantity != 0}" ng-repeat="ticket in tickets | orderBy:'position'" ng-init="index = $index" ng-controller="TicketCtrl">
+      <div class="display-table" id="ticket_757552">
+        <div class="display-table-row">
+          <span class="ticket-name ng-binding">
+              全票
+              <!-- ngIf: unitNotice -->
+              <!-- ngIf: !!ticket.labelsText --><div class="small text-muted ng-binding ng-scope" ng-if="!!ticket.labelsText">紫2A, 紅2A, 紅2B, 紫2B</div><!-- end ngIf: !!ticket.labelsText -->
+              <div class="ticket-extra-info">
+                <!-- ngIf: ticket.for_online_event -->
+              </div>
+          </span>
+          <!-- ngIf: showSeatInfo() -->
+          <span class="ticket-price">
+            <!-- ngIf: ticket.price --><span ng-if="ticket.price" class="ng-scope">
+              <!-- ngIf: ticket.price.cents > 0 --><span ng-if="ticket.price.cents > 0" class="ng-binding ng-scope">
+                TWD$6,080
+                <span class="mobile-fee ng-binding" ng-bind-html="ticket.booking_fee_cents | feeAnnotation : ticket.price.currency"></span>
+              </span><!-- end ngIf: ticket.price.cents > 0 -->
+              <!-- ngIf: ticket.price.cents ==  0 -->
+            </span><!-- end ngIf: ticket.price -->
+          </span>
+          <!-- ngIf: chargeBookingFee -->
+          <!-- ngIf: purchasableAndSelectable --><span class="ticket-quantity ng-scope" ng-if="purchasableAndSelectable">
+              <!-- ngIf: showCapacityNotice --><span ng-if="showCapacityNotice" class="help-inline danger ng-binding ng-scope">
+                剩 2 張票
+              </span><!-- end ngIf: showCapacityNotice -->
+              <button class="btn-default minus" ng-click="quantityBtnClick(-1)" ng-disabled="ticketModel.quantity <= 0 || busy" disabled="disabled">
+                <i class="fa fa-minus"></i>
+              </button>
+              <input type="text" value="0" ng-keydown="quantityInputKeyDown($event)" ng-model="ticketModel.quantity" ng-keyup="quantityInputKeyUp($event)" ng-disabled="busy" class="ng-pristine ng-valid ng-not-empty ng-touched">
+              <button class="btn-default plus" ng-click="quantityBtnClick(1)" ng-disabled="cantBuyMore()">
+                <i class="fa fa-plus"></i>
+              </button>
+          </span><!-- end ngIf: purchasableAndSelectable -->
+          <!-- ngIf: !purchasableAndSelectable -->
+          <!-- ngIf: showCapacityNotice --><span ng-if="showCapacityNotice" class="mobile-capacity-notice help-inline danger ng-binding ng-scope">
+            剩 2 張票
+          </span><!-- end ngIf: showCapacityNotice -->
+        </div>
+      </div>
+      <!-- <div class="message" ng-if="showKKTIXonly" ng-bind-html="showKKTIXonlyMsg"></div> -->
+
+      <!-- ngIf: hasQualifications && ticketModel.quantity > 0 -->
+
+      <!-- ngRepeat: code in ticketModel.invitationCodes track by $index -->
+  </div>
