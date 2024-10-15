@@ -1,4 +1,4 @@
-
+var storedMsg;
 const ticketEvent = (t) => {
     //設定訂票當日的日期時間
     if(t===''){
@@ -16,12 +16,51 @@ const ticketEvent = (t) => {
         const delay = targetDate.getTime() - currentTime.getTime();
         //延遲執行按鈕
         setTimeout(function() {
-            chrome.runtime.sendMessage({ action: 'pageReloaded' });
+            chrome.runtime.sendMessage({ action: 'pageReloaded'});
         }, delay);
     } else {
         console.log('Current time is after the target date, button will not be clicked.');
     }
 };
+
+
+// function clickToTicket(){
+//     var button = document.querySelector('button.btn.btn-primary.text-bold.m-0');
+//     if (button) {
+//         chrome.runtime.sendMessage({ action: 'page2Next' });
+//         button.click();
+//     } else{
+//         setTimeout(function() {clickToTicket()}, 1000);
+//     }
+// }
+
+function clickToTicket() {
+    // 获取所有符合条件的按钮
+    var buttons = document.querySelectorAll('button.btn.btn-primary.text-bold.m-0');
+    
+    // 检查是否至少有两个按钮
+    if (buttons.length >= 2) {
+        var button = buttons[2];
+        chrome.runtime.sendMessage({ action: 'page2Next' });
+        button.click();
+    }else if (button) {
+        chrome.runtime.sendMessage({ action: 'page2Next' });
+        button.click();
+    } 
+    else {
+        setTimeout(function() { clickToTicket(); }, 1000);
+    }
+}
+// function getOrder(){
+//     var aElement = document.querySelector('ul.area-list li.select_form_b a');
+//     if (aElement) {
+//         aElement.click();
+//         buyTicket();
+//     }else{
+//         chrome.runtime.sendMessage({ action: 'soudOutReload' });
+//     }
+    
+// }
 
 
 function checkURL() {
@@ -36,72 +75,109 @@ function checkURL() {
             setTimeout(function() {checkURL()}, 1000);
         }
     }
-    
 }
 
-function clickToTicket(){
-    var button = document.querySelector('button.btn.btn-primary.text-bold.m-0');
-    if (button) {
-        chrome.runtime.sendMessage({ action: 'page2Next' });
-        button.click();
-    } else{
-        setTimeout(function() {clickToTicket()}, 1000);
-    }
-}
-function getOrder(){
-    var aElement = document.querySelector('ul.area-list li.select_form_b a');
-    if (aElement) {
-        aElement.click();
-        buyTicket();
-    }else{
-        chrome.runtime.sendMessage({ action: 'soudOutReload' });
+// function clickToTicket() {
+//     var rows = document.querySelectorAll('tr.gridc.fcTxt');
+//     var buttonToClick = null;
+    
+//     // 如果 targetDate 存在，尝试找到匹配的按钮
+//     if (storedMsg.targetDate) {
+//         var targetDate = storedMsg.targetDate.replace(/-/g, '/');
+//         console.log(targetDate);
+//         rows.forEach(function (row) {
+//             var dateText = row.querySelector('td:first-child').textContent.trim();
+//             if (dateText.includes(targetDate)) {
+//                 buttonToClick = row.querySelector('button.btn.btn-primary.text-bold.m-0');
+//             }
+//         });
+//     }
+
+//     // 如果找到了按钮，点击它；否则随机选择第一行的按钮
+//     if (buttonToClick) {
+//         chrome.runtime.sendMessage({ action: 'page2Next' });
+//         buttonToClick.click();
+//     } else if (rows.length > 0) {
+//         // 随机选择第一行的按钮
+//         buttonToClick = rows[0].querySelector('button.btn.btn-primary.text-bold.m-0');
+//         if (buttonToClick) {
+//             chrome.runtime.sendMessage({ action: 'page2Next' });
+//             buttonToClick.click();
+//         } else {
+//             // 如果没有按钮，继续尝试
+//             setTimeout(function() { clickToTicket(); }, 1000);
+//         }
+//     } else {
+//         // 如果没有行，停止尝试
+//         console.error('No rows found to click.');
+//     }
+// }
+
+
+
+
+function getOrder() {
+    // 獲取所有價格的 <a> 標籤
+    var aElements = document.querySelectorAll('ul.area-list li.select_form_b a');
+    var priceToSelect = storedMsg.targetPrice; // 指定要選擇的價格
+    var found = false; // 標記是否找到指定價格
+
+    for (var aElement of aElements) {
+        // 檢查每個 <a> 標籤的文本內容是否包含指定的價格
+        if (aElement.textContent.includes(priceToSelect)) {
+            aElement.click(); // 點擊包含該價格的元素
+            buyTicket(); // 呼叫購票函數
+            found = true; // 設置找到標記
+            break; // 找到後直接跳出循環
+        }
     }
     
+    // 如果沒有找到指定價格的元素，發送消息並提示用戶
+    if (!found) {
+        chrome.runtime.sendMessage({ action: 'soudOutReload' });
+        console.warn(`未找到價格 ${priceToSelect} 的座位選項。`);
+        alert(`未找到價格 ${priceToSelect} 的座位選項。`); // 提示用戶
+    }
 }
+
+
 
 function buyTicket() {
     //選張數
     console.log('選張數');
     var s_element = document.querySelector('.form-select.mobile-select');
     if (s_element) {
-        s_element.selectedIndex = 4;
+        s_element.selectedIndex = storedMsg.targetQuantity;
         var checkboxElement = document.getElementById("TicketForm_agree");
         checkboxElement.checked = true;
-        //TODO OCR辨識會找不到 tesseract
-        //checkOCR();
 
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        document.head.appendChild(script);
-        setTimeout(function() {
-             //識別驗證碼
-             const image = 'https://tixcraft.com/ticket/captcha?v=663adf0402f8e0.22876880';
-             (async () => {
-                 const worker = await Tesseract.createWorker();
-                 await worker.load();
-                 await worker.loadLanguage('eng');
-                 await worker.initialize('eng');
-                 const { data: { text } } = await worker.recognize(image);
-                 console.log(text);
-                 var inputElement = document.getElementById("TicketForm_verifyCode");
-                 inputElement.value = text;
-                 await worker.terminate();
-             })();
-        }, 4000);
+        // 檢查是否已經加載了 Tesseract 腳本
+        if (!window.Tesseract) {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            document.head.appendChild(script);
+
+            console.log("等待腳本加載完畢");
+            script.onload = function() {
+                goOCR();
+            };
+        } else {
+            console.log("如果腳本已經加載，直接識別驗證碼");
+            goOCR();
+        }
     } else {
-        setTimeout(function() {buyTicket()}, 1000);
+        setTimeout(function() { buyTicket() }, 1000);
     }
 }
 
-function checkOCR(){
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-    script.onload = function() {
-
-        setTimeout(function() {
-            //識別驗證碼
-            const image = 'https://tixcraft.com/ticket/captcha?v=663adf0402f8e0.22876880';
-            (async () => {
+function goOCR() {
+    setTimeout(async function() {
+        // 抓取 <img> 元素的 src 屬性
+        const imgElement = document.getElementById('TicketForm_verifyCode-image');
+        if (imgElement) {
+            const image = imgElement.src; // 取得 img 的 src
+            console.error('image:'+image);
+            try {
                 const worker = await Tesseract.createWorker();
                 await worker.load();
                 await worker.loadLanguage('eng');
@@ -111,12 +187,15 @@ function checkOCR(){
                 var inputElement = document.getElementById("TicketForm_verifyCode");
                 inputElement.value = text;
                 await worker.terminate();
-            })();
-        }, 2000);
-        
-    };
-    document.head.appendChild(script);
+            } catch (error) {
+                console.error('OCR 識別錯誤:', error);
+            }
+        } else {
+            console.error('找不到圖片元素');
+        }
+    }, 4000);
 }
+    
 
 function reset(){
     window.location.reload();
@@ -124,31 +203,64 @@ function reset(){
 
 
 var count = 0;
-
 const onMessage = (message) => {
   switch (message.action) {
     case "SETTIME":
-        ticketEvent(message.startTime);
+        chrome.storage.local.set({ storedMessage: message }, function() {
+            console.log('Message saved in storage:', message);
+            ticketEvent(message.startTime);
+        });
+
         break;
     case "RESET":
         reset();
         break;
     case "GETTICKET":
-        checkURL();
+        chrome.storage.local.get('storedMessage', function(result) {
+            if (result.storedMessage) {
+                console.log('Retrieved message:', result.storedMessage);
+                storedMsg =result.storedMessage;
+                console.log('storedMsg:', storedMsg);
+                checkURL(result.storedMessage.targetDate);
+            }
+        });
+        
+        
         break;
     case "PAGE2TICKET":
-        getOrder();
+        chrome.storage.local.get('storedMessage', function(result) {
+            if (result.storedMessage) {
+                console.log('Retrieved message:', result.storedMessage);
+                storedMsg =result.storedMessage;
+                getOrder();
+            }
+        });
+        
         break;
     case "SOLDOUT":
         if (count < 5) {
             setTimeout(function() {
-                getOrder();
+                chrome.storage.local.get('storedMessage', function(result) {
+                    if (result.storedMessage) {
+                        console.log('Retrieved message:', result.storedMessage);
+                        storedMsg =result.storedMessage;
+                        getOrder();
+                    }
+                });
+                
                 count++;
             }, 10000);
         }
         break;
     case "BUY2TICKET":
-        buyTicket();
+        chrome.storage.local.get('storedMessage', function(result) {
+            if (result.storedMessage) {
+                console.log('Retrieved message:', result.storedMessage);
+                storedMsg =result.storedMessage;
+                buyTicket();
+            }
+        });
+        
         break;
     default:
       break;
@@ -157,5 +269,3 @@ const onMessage = (message) => {
 
 
 chrome.runtime.onMessage.addListener(onMessage);
-
-setInterval( console.log("AAA"), 2000);
