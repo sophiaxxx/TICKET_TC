@@ -23,46 +23,6 @@ const ticketEvent = (t) => {
     }
 };
 
-
-// function clickToTicket(){
-//     var button = document.querySelector('button.btn.btn-primary.text-bold.m-0');
-//     if (button) {
-//         chrome.runtime.sendMessage({ action: 'page2Next' });
-//         button.click();
-//     } else{
-//         setTimeout(function() {clickToTicket()}, 1000);
-//     }
-// }
-
-function clickToTicket() {
-    // 获取所有符合条件的按钮
-    var buttons = document.querySelectorAll('button.btn.btn-primary.text-bold.m-0');
-    
-    // 检查是否至少有两个按钮
-    if (buttons.length >= 2) {
-        var button = buttons[2];
-        chrome.runtime.sendMessage({ action: 'page2Next' });
-        button.click();
-    }else if (button) {
-        chrome.runtime.sendMessage({ action: 'page2Next' });
-        button.click();
-    } 
-    else {
-        setTimeout(function() { clickToTicket(); }, 1000);
-    }
-}
-// function getOrder(){
-//     var aElement = document.querySelector('ul.area-list li.select_form_b a');
-//     if (aElement) {
-//         aElement.click();
-//         buyTicket();
-//     }else{
-//         chrome.runtime.sendMessage({ action: 'soudOutReload' });
-//     }
-    
-// }
-
-
 function checkURL() {
     var currentURL = window.location.href;
     if (currentURL.indexOf('tixcraft.com/activity/detail') > 0 ) {
@@ -76,6 +36,95 @@ function checkURL() {
         }
     }
 }
+var _count = 0;
+function clickToTicket() {
+    // 获取所有符合条件的按钮
+    var buttons = document.querySelectorAll('button.btn.btn-primary.text-bold.m-0');
+    
+    // 检查是否至少有两个按钮
+    if (buttons.length >= 2) {
+        var button = buttons[2];
+        console.log('clickToTicket: more button');
+        chrome.runtime.sendMessage({ action: 'page2Next' });
+        try {
+            button.click();
+        } catch (error) {
+            console.error('clickToTicket: failed to click button', error);
+        }
+    }else{
+        var button = buttons[0];
+        console.log('clickToTicket: one button');
+        chrome.runtime.sendMessage({ action: 'page2Next' });
+        try {
+            button.click();
+        } catch (error) {
+            console.error('clickToTicket: failed to click button', error);
+        }
+    } 
+
+        if (_count < 5){
+            console.log('clickToTicket: no button');
+            setTimeout(function() { checkURL(); }, 500);
+            _count++;
+        }
+
+}
+
+async function getOrder() {
+    var aElements = document.querySelectorAll('ul.area-list li.select_form_a a');
+    var bElements = document.querySelectorAll('ul.area-list li.select_form_b a');
+    var cElements = document.querySelectorAll('ul.area-list li.select_form_c a');
+    
+    var priceToSelect = storedMsg.targetPrice; // 指定要選擇的價格
+
+    // 同時處理 bElements 和 aElements，並取得結果
+    const [bFound, aFound, cFound] = await Promise.all([
+        processList(aElements, priceToSelect),
+        processList(bElements, priceToSelect),
+        processList(cElements, priceToSelect)
+    ]);
+
+    // 如果沒有找到指定價格的元素，發送消息並提示用戶
+    if (!bFound && !aFound && !cFound) {
+        //chrome.runtime.sendMessage({ action: 'soudOutReload' });
+        console.warn(`未找到價格 ${priceToSelect} 的座位選項。${cFound}${bFound}${aFound}`);
+        alert(`未找到價格 ${priceToSelect} 的座位選項。`); // 提示用戶
+    }
+}
+
+async function processList(elements, priceToSelect) {
+    for (let element of elements) {
+        if (element.textContent.includes(priceToSelect)) {
+            element.click(); // 點擊包含該價格的元素
+            await buyTicket(); // 呼叫購票函數，假設這是個非同步函數
+            return true; // 找到符合的價格後，返回 true
+        }
+    }
+    return false; // 沒有找到時返回 false
+}
+
+
+
+
+// function getOrder() {
+//     // 獲取所有價格的 <a> 標籤
+//     var bElements = document.querySelectorAll('ul.area-list li.select_form_b a');
+//     var aElements = document.querySelectorAll('ul.area-list li.select_form_a a');
+//     var priceToSelect = storedMsg.targetPrice; // 指定要選擇的價格
+//     var found = false; // 標記是否找到指定價格
+
+//     for (var aElement of bElements) {
+//         // 檢查每個 <a> 標籤的文本內容是否包含指定的價格
+//         if (aElement.textContent.includes(priceToSelect)) {
+//             aElement.click(); // 點擊包含該價格的元素
+//             buyTicket(); // 呼叫購票函數
+//             found = true; // 設置找到標記
+//             break; // 找到後直接跳出循環
+//         }
+//     }
+    
+
+// }
 
 // function clickToTicket() {
 //     var rows = document.querySelectorAll('tr.gridc.fcTxt');
@@ -113,33 +162,16 @@ function checkURL() {
 //     }
 // }
 
-
-
-
-function getOrder() {
-    // 獲取所有價格的 <a> 標籤
-    var aElements = document.querySelectorAll('ul.area-list li.select_form_b a');
-    var priceToSelect = storedMsg.targetPrice; // 指定要選擇的價格
-    var found = false; // 標記是否找到指定價格
-
-    for (var aElement of aElements) {
-        // 檢查每個 <a> 標籤的文本內容是否包含指定的價格
-        if (aElement.textContent.includes(priceToSelect)) {
-            aElement.click(); // 點擊包含該價格的元素
-            buyTicket(); // 呼叫購票函數
-            found = true; // 設置找到標記
-            break; // 找到後直接跳出循環
-        }
-    }
+// function getOrder(){
+//     var aElement = document.querySelector('ul.area-list li.select_form_b a');
+//     if (aElement) {
+//         aElement.click();
+//         buyTicket();
+//     }else{
+//         chrome.runtime.sendMessage({ action: 'soudOutReload' });
+//     }
     
-    // 如果沒有找到指定價格的元素，發送消息並提示用戶
-    if (!found) {
-        chrome.runtime.sendMessage({ action: 'soudOutReload' });
-        console.warn(`未找到價格 ${priceToSelect} 的座位選項。`);
-        alert(`未找到價格 ${priceToSelect} 的座位選項。`); // 提示用戶
-    }
-}
-
+// }
 
 
 function buyTicket() {
@@ -151,7 +183,7 @@ function buyTicket() {
         var checkboxElement = document.getElementById("TicketForm_agree");
         checkboxElement.checked = true;
 
-        // 檢查是否已經加載了 Tesseract 腳本
+        //檢查是否已經加載了 Tesseract 腳本
         if (!window.Tesseract) {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
